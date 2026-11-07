@@ -252,7 +252,7 @@ function bind() {
   }));
 }
 
-Promise.all([d3.csv('data/matches.csv'), d3.csv('data/fixtures.csv'), fetch('data/updated.txt').then((r) => (r.ok ? r.text() : '')).catch(() => '')])
+Promise.all([d3.csv('matches.csv'), d3.csv('fixtures.csv'), fetch('updated.txt').then((r) => (r.ok ? r.text() : '')).catch(() => '')])
   .then(([matches, fixtures, updated]) => {
     S.rows = build(matches, fixtures);
     const codes = [...new Set(fixtures.map((f) => f.Div))].sort((a, b) => (LEAGUES[a] || a).localeCompare(LEAGUES[b] || b));

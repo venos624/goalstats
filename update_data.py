@@ -1,13 +1,13 @@
 """Refresh the site's data from football-data.co.uk.
 
 Writes:
-  data/matches.csv   every played match of the current season (22 leagues)
-  data/fixtures.csv  upcoming fixtures with average odds
-  data/updated.txt   date of the last refresh (UTC)
+  matches.csv   every played match of the current season (22 leagues)
+  fixtures.csv  upcoming fixtures with average odds
+  updated.txt   date of the last refresh (UTC)
 
-Run:  python scripts/update_data.py
+Run:  python update_data.py
 Test with local files instead of downloading:
-      python scripts/update_data.py --results-xlsx all-euro-data.xlsx --fixtures-csv fixtures.csv
+      python update_data.py --results-xlsx all-euro-data.xlsx --fixtures-csv fixtures.csv
 """
 import argparse
 import datetime as dt
@@ -24,7 +24,7 @@ LEAGUES = ["E0", "E1", "E2", "E3", "EC", "SC0", "SC1", "SC2", "SC3", "D1", "D2",
 BASE = "https://www.football-data.co.uk"
 # Check this link once on https://www.football-data.co.uk/matches.php ("Upcoming fixtures")
 FIXTURES_URL = BASE + "/fixtures.csv"
-OUT = Path(__file__).resolve().parent.parent / "data"
+OUT = Path(__file__).resolve().parent  # files live next to index.html
 HEADERS = {"User-Agent": "Mozilla/5.0 (site data refresh)"}
 
 
