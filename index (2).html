@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoalStats – Who creates more chances?</title>
+<meta name="description" content="Which team is expected to create more chances in every upcoming match, based on shots on target. 22 European leagues, updated daily.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --fg: #1b1b19; --muted: #6a6964; --line: #e5e3dc;
+    --home: #1f6f4a; --away: #2b5ea8; --soft: #eef6f1; --win: #1f7a4c; --draw: #8a6d1d; --loss: #b3402f;
+    --chip: #f1efe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141413; --panel: #1d1d1b; --fg: #edece7; --muted: #a2a19b; --line: #33322e;
+      --home: #5cc493; --away: #7aa7f0; --soft: #1b2e24; --win: #5cc493; --draw: #d8b34e; --loss: #ef7a68; --chip: #262623; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5; }
+  a { color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 56px; display: flex; flex-direction: column; gap: 28px; }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; color: var(--home); margin: 0 0 6px; letter-spacing: .02em; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-weight: 400; font-size: clamp(28px, 5vw, 40px); line-height: 1.12; margin: 0 0 10px; }
+  .lead { color: var(--muted); margin: 0; max-width: 46rem; font-size: 16px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
+  .notice { background: var(--soft); border-radius: 10px; padding: 10px 14px; font-size: 14px; margin: 0 0 14px; }
+
+  .picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+  .pick { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+  .pick .rank { position: absolute; top: 14px; right: 16px; font-weight: 700; color: var(--muted); font-size: 13px; }
+  .meta { color: var(--muted); font-size: 13px; padding-right: 28px; }
+  .teams { font-weight: 600; font-size: 16px; }
+  .teams .vs { color: var(--muted); font-weight: 400; margin: 0 6px; }
+  .tip { font-size: 15px; }
+  .tip b { font-size: 17px; }
+  .row2 { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .odds { background: var(--chip); border-radius: 8px; padding: 4px 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .badge { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; }
+  .b-clear { background: var(--soft); color: var(--home); }
+  .b-fav { background: var(--chip); color: var(--fg); }
+  .b-slight, .b-even { background: var(--chip); color: var(--muted); }
+  .res { font-weight: 700; border-radius: 8px; padding: 2px 10px; font-size: 13px; }
+  .r-W { background: var(--soft); color: var(--win); }
+  .r-D { background: var(--chip); color: var(--draw); }
+  .r-L { background: var(--chip); color: var(--loss); }
+  .empty { color: var(--muted); padding: 18px; background: var(--panel); border: 1px dashed var(--line); border-radius: 14px; }
+
+  .bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--chip); }
+  .bar .h { background: var(--home); }
+  .bar .a { background: var(--away); }
+  .barlbl { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 3px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .stat .v { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat .k { color: var(--muted); font-size: 13px; }
+  .pos { color: var(--win); } .neg { color: var(--loss); }
+  details.box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; margin-top: 12px; }
+  details.box summary { cursor: pointer; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  td.n, th.n { text-align: right; }
+  .tblwrap { overflow-x: auto; }
+
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  select, input[type=search] { font: inherit; font-size: 14px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; max-width: 100%; }
+  input[type=search] { min-width: 0; flex: 1 1 180px; }
+  button.link { font: inherit; font-size: 14px; background: none; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; color: var(--fg); cursor: pointer; }
+  .list { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .m { display: grid; grid-template-columns: 130px minmax(0, 1fr) minmax(140px, 220px) 170px; gap: 14px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .m:last-child { border-bottom: 0; }
+  .m .when { color: var(--muted); font-size: 13px; }
+  .m .when b { display: block; color: var(--fg); font-weight: 500; }
+  .m .verdict { font-size: 13px; }
+  .m .verdict b { font-weight: 600; }
+  .m .o { display: flex; gap: 6px; justify-content: flex-end; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .m .o span { background: var(--chip); border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  .m .o span.fav { outline: 2px solid var(--home); outline-offset: -2px; }
+  .details { display: none; grid-column: 1 / -1; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .show-details .details { display: block; }
+  @media (max-width: 760px) {
+    .m { grid-template-columns: 1fr; gap: 6px; }
+    .m .o { justify-content: flex-start; }
+  }
+
+  .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+  .how div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; font-size: 14px; }
+  .how b { display: block; margin-bottom: 4px; font-size: 15px; }
+  footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="brand">GoalStats</p>
+    <h1>Who will create more chances?</h1>
+    <p class="lead">For every upcoming match we compare how many shots on target each team creates and allows. The bigger the gap, the clearer the favourite.</p>
+  </header>
+
+  <section id="top5">
+    <h2>This week’s Top 5</h2>
+    <p class="sub">The 5 matches with the biggest gap in expected shots on target, where the favourite’s odds are above 1.60.</p>
+    <p class="notice" id="notice" hidden></p>
+    <div class="picks" id="picks"><div class="empty">Loading…</div></div>
+  </section>
+
+  <section id="record">
+    <h2>Top 5 track record this season</h2>
+    <p class="sub">The same Top 5 rule applied to every week of the season so far, with 1 unit on each pick at the average odds. Wins, draws and losses — nothing hidden.</p>
+    <div class="stats" id="stats"></div>
+    <details class="box">
+      <summary>Week by week</summary>
+      <div class="tblwrap">
+        <table>
+          <thead><tr><th>Week starting</th><th class="n">Picks</th><th class="n">Won</th><th class="n">Drawn</th><th class="n">Lost</th><th class="n">Profit (units)</th></tr></thead>
+          <tbody id="weeks"></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section id="all">
+    <h2>All matches</h2>
+    <p class="sub">Green is the home team, blue the away team. The longer its part of the bar, the more shots on target that team is expected to create.</p>
+    <div class="tools">
+      <select id="f-league" aria-label="League"><option value="">All leagues</option></select>
+      <input type="search" id="f-team" placeholder="Search a team" aria-label="Search a team">
+      <button type="button" class="link" id="f-details" aria-pressed="false">Show numbers</button>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <div class="how">
+      <div><b>1. Shots on target</b>For each team we take the average shots on target it creates and allows per match this season.</div>
+      <div><b>2. Expected chances</b>Home team’s expected shots on target = its own average for + the away team’s average against, divided by 2. The same for the away team.</div>
+      <div><b>3. The gap</b>The difference tells you who is expected to create more. 2+ is a clear favourite; under 0.5 is an even match.</div>
+    </div>
+  </section>
+
+  <footer>
+    <span id="updated"></span> Results, fixtures and odds: <a href="https://www.football-data.co.uk" rel="noopener">football-data.co.uk</a>.
+    Statistics only — not betting advice. Past results do not guarantee future results. 18+. Gamble responsibly.
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const LEAGUES = { E0: 'Premier League', E1: 'Championship', E2: 'League One', E3: 'League Two', EC: 'National League', SC0: 'Scottish Premiership', SC1: 'Scottish Championship', SC2: 'Scottish League One', SC3: 'Scottish League Two', D1: 'Bundesliga', D2: '2. Bundesliga', SP1: 'La Liga', SP2: 'Segunda División', I1: 'Serie A', I2: 'Serie B', F1: 'Ligue 1', F2: 'Ligue 2', B1: 'Belgian Pro League', N1: 'Eredivisie', P1: 'Primeira Liga', T1: 'Süper Lig', G1: 'Greek Super League' };
+const MIN_GAMES = 6, MIN_ODDS = 1.6, TOP_N = 5;
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const f1 = d3.format('.1f'), f2 = d3.format('.2f'), fs = d3.format('+.1f');
+const fmtWhen = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+const fmtDay = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+// football-data.co.uk kick-off times are UK local time
+function lastSunday(y, m) { const d = new Date(Date.UTC(y, m + 1, 0)); d.setUTCDate(d.getUTCDate() - d.getUTCDay()); return d; }
+function kickoff(date, time) {
+  const [y, mo, d] = date.split('-').map(Number); const [h, mi] = (time || '15:00').split(':').map(Number);
+  const t = Date.UTC(y, mo - 1, d, h, mi);
+  const s = lastSunday(y, 2).getTime() + 3600e3, e = lastSunday(y, 9).getTime() + 3600e3;
+  return new Date(t >= s && t < e ? t - 3600e3 : t);
+}
+function weekStart(dateStr) { const d = new Date(dateStr + 'T12:00:00Z'); const wd = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - wd); return d.toISOString().slice(0, 10); }
+
+// Each team's season averages of shots on target for/against, from matches played before `date`
+function makeHistory(matches) {
+  const games = {};
+  matches.forEach((m) => {
+    if (m.HST === '' || m.AST === '' || m.HST == null) return;
+    (games[m.HomeTeam] = games[m.HomeTeam] || []).push({ d: m.Date, f: +m.HST, a: +m.AST });
+    (games[m.AwayTeam] = games[m.AwayTeam] || []).push({ d: m.Date, f: +m.AST, a: +m.HST });
+  });
+  return (team, date) => {
+    const l = (games[team] || []).filter((g) => g.d < date);
+    if (!l.length) return { n: 0 };
+    return { n: l.length, f: d3.mean(l, (g) => g.f), a: d3.mean(l, (g) => g.a) };
+  };
+}
+function rate(hist, home, away, date) {
+  const h = hist(home, date), a = hist(away, date);
+  if (h.n < MIN_GAMES || a.n < MIN_GAMES) return { ok: false, hN: h.n, aN: a.n };
+  const xH = (h.f + a.a) / 2, xA = (a.f + h.a) / 2;
+  return { ok: true, h, a, xH, xA, diff: xH - xA, hN: h.n, aN: a.n };
+}
+function label(diff) {
+  const g = Math.abs(diff);
+  if (g >= 2) return ['Clear favourite', 'b-clear'];
+  if (g >= 1) return ['Favourite', 'b-fav'];
+  if (g >= 0.5) return ['Slight edge', 'b-slight'];
+  return ['Even match', 'b-even'];
+}
+function barEl(xH, xA, homeLbl, awayLbl) {
+  const wrap = el('div');
+  const bar = el('div', 'bar'); const t = xH + xA || 1;
+  const h = el('div', 'h'); h.style.width = (100 * xH / t) + '%';
+  const a = el('div', 'a'); a.style.width = (100 * xA / t) + '%';
+  bar.append(h, a);
+  const lb = el('div', 'barlbl'); lb.append(el('span', null, `${homeLbl} ${f1(xH)}`), el('span', null, `${f1(xA)} ${awayLbl}`));
+  wrap.append(bar, lb); wrap.setAttribute('aria-label', `Expected shots on target: home ${f1(xH)}, away ${f1(xA)}`);
+  return wrap;
+}
+function topPicks(rows) {
+  return rows.filter((r) => r.ok && r.diff !== 0 && r.favOdds > MIN_ODDS)
+    .sort((x, y) => Math.abs(y.diff) - Math.abs(x.diff)).slice(0, TOP_N);
+}
+
+function renderPicks(picks, results) {
+  const box = $('picks'); box.replaceChildren();
+  if (!picks.length) { box.append(el('div', 'empty', 'No match meets the Top 5 rule this week yet.')); return; }
+  picks.forEach((p, i) => {
+    const c = el('article', 'pick');
+    c.append(el('div', 'rank', `#${i + 1}`));
+    c.append(el('div', 'meta', `${p.league} · ${fmtWhen.format(p.ko)}`));
+    const t = el('div', 'teams'); t.append(document.createTextNode(p.home), el('span', 'vs', 'vs'), document.createTextNode(p.away)); c.append(t);
+    const tip = el('div', 'tip'); tip.append(el('b', null, p.fav), document.createTextNode(` to create more chances (${fs(Math.abs(p.diff))} shots on target)`)); c.append(tip);
+    c.append(barEl(p.xH, p.xA, p.home, p.away));
+    const r2 = el('div', 'row2');
+    const [lab, cls] = label(p.diff); r2.append(el('span', 'badge ' + cls, lab));
+    const right = el('span', 'right');
+    const res = results && results[p.key];
+    if (res) {
+      const out = res.r === p.favSide ? 'W' : res.r === 'D' ? 'D' : 'L';
+      right.append(el('span', 'res r-' + out, `${out === 'W' ? 'Won' : out === 'D' ? 'Draw' : 'Lost'} ${res.score}`));
+    }
+    right.append(el('span', 'odds', `${p.fav} @ ${f2(p.favOdds)}`));
+    r2.append(right); c.append(r2);
+    box.append(c);
+  });
+}
+
+function renderRecord(matches, hist) {
+  const stats = $('stats'), weeksTb = $('weeks');
+  if (!matches.columns.includes('AvgH')) { stats.replaceChildren(el('div', 'empty', 'The track record appears after the next data update.')); return; }
+  const byWeek = d3.group(matches, (m) => weekStart(m.Date));
+  let picks = 0, won = 0, drawn = 0, lost = 0, units = 0; const rowsOut = [];
+  [...byWeek.keys()].sort().forEach((wk) => {
+    const rows = byWeek.get(wk).map((m) => {
+      const r = rate(hist, m.HomeTeam, m.AwayTeam, m.Date); if (!r.ok) return r;
+      const favSide = r.diff > 0 ? 'H' : 'A'; const favOdds = +(favSide === 'H' ? m.AvgH : m.AvgA);
+      const res = +m.FTHG > +m.FTAG ? 'H' : +m.FTHG < +m.FTAG ? 'A' : 'D';
+      return { ...r, favSide, favOdds, res };
+    });
+    const top = topPicks(rows);
+    if (!top.length) return;
+    let w = 0, d = 0, l = 0, u = 0;
+    top.forEach((p) => { if (p.res === p.favSide) { w++; u += p.favOdds - 1; } else { if (p.res === 'D') d++; else l++; u -= 1; } });
+    picks += top.length; won += w; drawn += d; lost += l; units += u;
+    rowsOut.push([wk, top.length, w, d, l, u]);
+  });
+  if (!picks) { stats.replaceChildren(el('div', 'empty', 'Not enough matches played yet this season.')); return; }
+  const roi = units / picks;
+  const card = (v, k, cls) => { const s = el('div', 'stat'); s.append(el('div', 'v' + (cls ? ' ' + cls : ''), v), el('div', 'k', k)); return s; };
+  stats.replaceChildren(
+    card(String(picks), `picks in ${rowsOut.length} weeks`),
+    card(d3.format('.0%')(won / picks), `won (${won} W · ${drawn} D · ${lost} L)`),
+    card(fs(units), 'profit in units (1 per pick)', units >= 0 ? 'pos' : 'neg'),
+    card(d3.format('+.1%')(roi), 'return per unit staked', roi >= 0 ? 'pos' : 'neg'));
+  weeksTb.replaceChildren(...rowsOut.reverse().map(([wk, n, w, d, l, u]) => {
+    const tr = el('tr');
+    tr.append(el('td', null, fmtDay.format(new Date(wk + 'T12:00:00Z'))), el('td', 'n', n), el('td', 'n', w), el('td', 'n', d), el('td', 'n', l), el('td', 'n ' + (u >= 0 ? 'pos' : 'neg'), fs(u)));
+    return tr;
+  }));
+}
+
+let ALL = [], showNums = false;
+function renderList() {
+  const lg = $('f-league').value, q = $('f-team').value.trim().toLowerCase();
+  const rows = ALL.filter((r) => (!lg || r.div === lg) && (!q || r.home.toLowerCase().includes(q) || r.away.toLowerCase().includes(q)));
+  const list = $('list'); list.classList.toggle('show-details', showNums);
+  if (!rows.length) { list.replaceChildren(el('div', 'empty', 'No matches found.')); return; }
+  list.replaceChildren(...rows.map((r) => {
+    const m = el('div', 'm');
+    const w = el('div', 'when'); w.append(el('b', null, fmtWhen.format(r.ko)), document.createTextNode(r.league)); m.append(w);
+    const mid = el('div');
+    const t = el('div', 'teams'); t.append(document.createTextNode(r.home), el('span', 'vs', 'vs'), document.createTextNode(r.away)); mid.append(t);
+    if (r.ok) {
+      const v = el('div', 'verdict'); const [lab] = label(r.diff);
+      if (Math.abs(r.diff) < 0.5) v.append(el('b', null, lab), document.createTextNode(` · gap ${f1(Math.abs(r.diff))}`));
+      else v.append(el('b', null, `${lab}: ${r.fav}`), document.createTextNode(` · ${fs(Math.abs(r.diff))} shots on target`));
+      mid.append(v);
+    } else mid.append(el('div', 'verdict', 'Not enough matches yet'));
+    m.append(mid);
+    m.append(r.ok ? barEl(r.xH, r.xA, 'Home', 'Away') : el('div'));
+    const o = el('div', 'o');
+    [['1', r.oH, 'H'], ['X', r.oD, 'D'], ['2', r.oA, 'A']].forEach(([k, v, s]) => {
+      o.append(el('span', r.ok && r.favSide === s && Math.abs(r.diff) >= 1 ? 'fav' : null, `${k} ${v ? f2(v) : '–'}`));
+    });
+    m.append(o);
+    if (r.ok) m.append(el('div', 'details',
+      `${r.home}: creates ${f1(r.h.f)}, allows ${f1(r.h.a)} shots on target per match (${r.hN} matches) · ` +
+      `${r.away}: creates ${f1(r.a.f)}, allows ${f1(r.a.a)} (${r.aN} matches) · ` +
+      `Expected: ${r.home} ${f2(r.xH)} – ${f2(r.xA)} ${r.away}`));
+    return m;
+  }));
+}
+
+Promise.all([d3.csv('matches.csv'), d3.csv('fixtures.csv'), fetch('updated.txt').then((r) => (r.ok ? r.text() : '')).catch(() => '')])
+  .then(([matches, fixtures, updated]) => {
+    if (updated.trim()) $('updated').textContent = `Updated ${updated.trim()}.`;
+    if (!matches.columns.includes('HST')) { $('picks').replaceChildren(el('div', 'empty', 'Data is being prepared. Please check back after the next update.')); return; }
+    const hist = makeHistory(matches);
+    const results = {};
+    matches.forEach((m) => { results[`${m.Date}|${m.HomeTeam}|${m.AwayTeam}`] = { r: +m.FTHG > +m.FTAG ? 'H' : +m.FTHG < +m.FTAG ? 'A' : 'D', score: `${m.FTHG}-${m.FTAG}` }; });
+
+    ALL = fixtures.map((f) => {
+      const r = rate(hist, f.HomeTeam, f.AwayTeam, f.Date);
+      const row = { ...r, key: `${f.Date}|${f.HomeTeam}|${f.AwayTeam}`, div: f.Div, league: LEAGUES[f.Div] || f.Div, ko: kickoff(f.Date, f.Time),
+        home: f.HomeTeam, away: f.AwayTeam, oH: +f.AvgH || null, oD: +f.AvgD || null, oA: +f.AvgA || null };
+      if (r.ok) { row.favSide = r.diff > 0 ? 'H' : 'A'; row.fav = r.diff > 0 ? f.HomeTeam : f.AwayTeam; row.favOdds = r.diff > 0 ? row.oH : row.oA; }
+      return row;
+    }).sort((a, b) => a.ko - b.ko);
+
+    const now = Date.now();
+    const upcoming = ALL.filter((r) => r.ko.getTime() > now);
+    if (upcoming.length) {
+      ALL = upcoming;
+      renderPicks(topPicks(upcoming));
+    } else {
+      const last = d3.max(ALL, (r) => r.ko);
+      const n = $('notice'); n.hidden = false;
+      n.textContent = `Next week’s fixtures aren’t out yet. Below are last round’s Top 5 (up to ${last ? fmtWhen.format(last) : '—'}) with their results. New picks appear here automatically.`;
+      renderPicks(topPicks(ALL), results);
+    }
+    renderRecord(matches, hist);
+
+    const codes = [...new Set(ALL.map((r) => r.div))].sort((a, b) => (LEAGUES[a] || a).localeCompare(LEAGUES[b] || b));
+    $('f-league').append(...codes.map((c) => new Option(LEAGUES[c] || c, c)));
+    $('f-league').addEventListener('change', renderList);
+    $('f-team').addEventListener('input', renderList);
+    $('f-details').addEventListener('click', (e) => { showNums = !showNums; e.target.setAttribute('aria-pressed', String(showNums)); e.target.textContent = showNums ? 'Hide numbers' : 'Show numbers'; renderList(); });
+    renderList();
+  })
+  .catch(() => { $('picks').replaceChildren(el('div', 'empty', 'Could not load the data. Please try again later.')); });
+</script>
+</body>
+</html>
